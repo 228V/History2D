@@ -1,30 +1,34 @@
 using UnityEngine;
 
-public class Enemy : MonoBehaviour
+
+public class EnemyAI : MonoBehaviour
 {
     [Header("Настройки патрулирования")]
-    public Transform[] patrolPoints; // Массив точек патрулирования
-    public float patrolSpeed = 2f;    // Скорость при патрулировании
+    public Vector2[] patrolCoordinates; // Координаты X/Y из инспектора
+    public float patrolSpeed = 2f;      // Скорость движения
     public float reachDistance = 0.1f; // Дистанция для смены точки
 
     [Header("Настройки преследования")]
-    public float chaseSpeed = 4f;     // Скорость при преследовании
-    public float chaseDistance = 5f;  // Дистанция обнаружения игрока
-    public float stopDistance = 1f;   // Дистанция остановки возле игрока
+    public float chaseSpeed = 4f;       // Скорость преследования
+    public float chaseDistance = 5f;   // Дистанция обнаружения игрока
+    public float stopDistance = 1f;     // Дистанция остановки
 
     private Transform player;
     private int currentPointIndex = 0;
     private bool isChasing = false;
     private Vector3 originalScale;
+    private Vector3 targetPosition; // Хранение целевой позиции
 
     void Start()
     {
         player = GameObject.FindGameObjectWithTag("Player").transform;
         originalScale = transform.localScale;
 
-        // Проверка на наличие точек патрулирования
-        if (patrolPoints.Length == 0)
-            Debug.LogError("Не назначены точки патрулирования!");
+        if (patrolCoordinates.Length == 0)
+        {
+            Debug.LogError("Не назначены координаты патрулирования!");
+            enabled = false;
+        }
     }
 
     void Update()
@@ -39,26 +43,34 @@ public class Enemy : MonoBehaviour
 
     void Patrol()
     {
-        if (patrolPoints.Length == 0) return;
+        if (patrolCoordinates.Length == 0) return;
 
-        // Движение к текущей точке
-        Transform target = patrolPoints[currentPointIndex];
+        // Обновление целевой позиции только при необходимости
+        if (targetPosition == Vector3.zero ||
+            currentPointIndex >= patrolCoordinates.Length)
+        {
+            currentPointIndex = Mathf.Clamp(currentPointIndex, 0, patrolCoordinates.Length - 1);
+            Vector2 target = patrolCoordinates[currentPointIndex];
+            targetPosition = new Vector3(target.x, target.y, transform.position.z);
+        }
+
+        // Плавное перемещение
         transform.position = Vector3.MoveTowards(
             transform.position,
-            target.position,
+            targetPosition,
             patrolSpeed * Time.deltaTime
         );
 
         // Проверка достижения точки
-        if (Vector3.Distance(transform.position, target.position) < reachDistance)
+        if (Vector3.Distance(transform.position, targetPosition) < reachDistance)
         {
-            currentPointIndex = (currentPointIndex + 1) % patrolPoints.Length;
+            currentPointIndex = (currentPointIndex + 1) % patrolCoordinates.Length;
+            targetPosition = Vector3.zero; // Сброс целевой позиции
         }
     }
 
     void ChasePlayer()
     {
-        // Проверка дистанции для остановки
         if (Vector3.Distance(transform.position, player.position) > stopDistance)
         {
             transform.position = Vector3.MoveTowards(
@@ -71,10 +83,15 @@ public class Enemy : MonoBehaviour
 
     void FlipSprite()
     {
-        // Определение направления движения
-        Vector3 direction = isChasing ?
-            (player.position - transform.position) :
-            (patrolPoints[currentPointIndex].position - transform.position);
+        Vector3 direction;
+        if (isChasing)
+        {
+            direction = player.position - transform.position;
+        }
+        else
+        {
+            direction = targetPosition - transform.position;
+        }
 
         // Поворот спрайта
         if (direction.x > 0)
@@ -99,10 +116,13 @@ public class Enemy : MonoBehaviour
         }
     }
 
-    // Визуализация зоны обнаружения в редакторе
     void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, chaseDistance);
     }
 }
+
+
+
+
