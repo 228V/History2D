@@ -135,7 +135,7 @@ GameObject:
   - component: {fileID: 111330088}
   m_Layer: 0
   m_Name: Triangle
-  m_TagString: Enemy
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -157,9 +157,11 @@ MonoBehaviour:
   - {x: 6.76, y: -3.02}
   patrolSpeed: 1.55
   reachDistance: 0.1
-  chaseSpeed: 2
-  chaseDistance: 2.09
-  stopDistance: 0.43
+  chaseSpeed: 3.35
+  chaseDistance: 3.84
+  stopDistance: 1.22
+  idleTime: 2
+  idleInterval: 10
 --- !u!68 &111330084
 EdgeCollider2D:
   m_ObjectHideFlags: 0
@@ -299,7 +301,7 @@ Transform:
   m_GameObject: {fileID: 111330082}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2.73, y: -3.038, z: 0}
+  m_LocalPosition: {x: 7.6, y: -3.038, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -339,7 +341,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0.9966252, y: 0.56259847}
+  m_Offset: {x: 1.6728656, y: 0.24665475}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.28866667}
@@ -349,7 +351,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 2.9932504, y: 1.6917062}
+  m_Size: {x: 3.3657336, y: 1.0598187}
   m_EdgeRadius: 0
 --- !u!1 &519420028
 GameObject:
@@ -692,7 +694,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   speed: 5
-  jumpForce: 5
+  jumpForce: 6
   decelerationRate: 10
 --- !u!50 &1287666818
 Rigidbody2D:

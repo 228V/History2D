@@ -1,42 +1,47 @@
 using UnityEngine;
 
-
-public class EnemyAI : MonoBehaviour
+public class Enemy : MonoBehaviour
 {
     [Header("Настройки патрулирования")]
-    public Vector2[] patrolCoordinates; // Координаты X/Y из инспектора
-    public float patrolSpeed = 2f;      // Скорость движения
-    public float reachDistance = 0.1f; // Дистанция для смены точки
+    public Vector2[] patrolCoordinates;
+    public float patrolSpeed = 2f;
+    public float reachDistance = 0.1f;
 
     [Header("Настройки преследования")]
-    public float chaseSpeed = 4f;       // Скорость преследования
-    public float chaseDistance = 5f;   // Дистанция обнаружения игрока
-    public float stopDistance = 1f;     // Дистанция остановки
+    public float chaseSpeed = 4f;
+    public float chaseDistance = 5f;
+    public float stopDistance = 1f;
+
+    [Header("Настройки простоя")]
+    public float idleTime = 2f;
+    public float idleInterval = 10f;
 
     private Transform player;
     private int currentPointIndex = 0;
     private bool isChasing = false;
+    private bool isIdle = false;
+    private float idleTimer = 0f;
+    private float nextIdleTime;
     private Vector3 originalScale;
-    private Vector3 targetPosition; // Хранение целевой позиции
 
     void Start()
     {
         player = GameObject.FindGameObjectWithTag("Player").transform;
         originalScale = transform.localScale;
-
-        if (patrolCoordinates.Length == 0)
-        {
-            Debug.LogError("Не назначены координаты патрулирования!");
-            enabled = false;
-        }
+        nextIdleTime = Time.time + idleInterval;
     }
 
     void Update()
     {
-        if (isChasing)
-            ChasePlayer();
+        if (isIdle)
+            HandleIdleState();
         else
-            Patrol();
+        {
+            if (isChasing)
+                ChasePlayer();
+            else
+                Patrol();
+        }
 
         FlipSprite();
     }
@@ -45,16 +50,17 @@ public class EnemyAI : MonoBehaviour
     {
         if (patrolCoordinates.Length == 0) return;
 
-        // Обновление целевой позиции только при необходимости
-        if (targetPosition == Vector3.zero ||
-            currentPointIndex >= patrolCoordinates.Length)
+        // Проверка на простой
+        if (Time.time >= nextIdleTime && !isIdle)
         {
-            currentPointIndex = Mathf.Clamp(currentPointIndex, 0, patrolCoordinates.Length - 1);
-            Vector2 target = patrolCoordinates[currentPointIndex];
-            targetPosition = new Vector3(target.x, target.y, transform.position.z);
+            StartIdle();
+            nextIdleTime = Time.time + idleInterval;
         }
 
-        // Плавное перемещение
+        // Движение к текущей координате
+        Vector2 target = patrolCoordinates[currentPointIndex];
+        Vector3 targetPosition = new Vector3(target.x, target.y, transform.position.z);
+
         transform.position = Vector3.MoveTowards(
             transform.position,
             targetPosition,
@@ -65,12 +71,12 @@ public class EnemyAI : MonoBehaviour
         if (Vector3.Distance(transform.position, targetPosition) < reachDistance)
         {
             currentPointIndex = (currentPointIndex + 1) % patrolCoordinates.Length;
-            targetPosition = Vector3.zero; // Сброс целевой позиции
         }
     }
 
     void ChasePlayer()
     {
+        // Проверка дистанции
         if (Vector3.Distance(transform.position, player.position) > stopDistance)
         {
             transform.position = Vector3.MoveTowards(
@@ -79,6 +85,26 @@ public class EnemyAI : MonoBehaviour
                 chaseSpeed * Time.deltaTime
             );
         }
+        else
+        {
+            isChasing = false; // Останавливаем преследование при достижении игрока
+        }
+    }
+
+    void HandleIdleState()
+    {
+        idleTimer -= Time.deltaTime;
+
+        if (idleTimer <= 0)
+        {
+            isIdle = false;
+        }
+    }
+
+    void StartIdle()
+    {
+        isIdle = true;
+        idleTimer = idleTime;
     }
 
     void FlipSprite()
@@ -90,7 +116,8 @@ public class EnemyAI : MonoBehaviour
         }
         else
         {
-            direction = targetPosition - transform.position;
+            Vector2 target = patrolCoordinates[currentPointIndex];
+            direction = new Vector3(target.x, target.y, transform.position.z) - transform.position;
         }
 
         // Поворот спрайта
@@ -100,9 +127,10 @@ public class EnemyAI : MonoBehaviour
             transform.localScale = new Vector3(-originalScale.x, originalScale.y, originalScale.z);
     }
 
+    // Триггеры для смены состояния
     void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.CompareTag("Player"))
+        if (other.CompareTag("Player") && !isIdle)
         {
             isChasing = true;
         }
@@ -122,7 +150,3 @@ public class EnemyAI : MonoBehaviour
         Gizmos.DrawWireSphere(transform.position, chaseDistance);
     }
 }
-
-
-
-
